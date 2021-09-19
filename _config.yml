@@ -24,9 +24,9 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Your awesome title
-email: your-email@domain.com
-author: GitHub User
+title: Code-it
+email: vajeen@gmail.com
+author: vajeen
 
 # Copyright setting
 # You can use any html code, currently below placeholders are available:
@@ -40,7 +40,7 @@ author: GitHub User
 #   "Copyright (c) 2017-{currentYear} <a href="https://example.com">{author}</a>"
 #   "Copyright © 2017-2021 Foobar"
 #
-copyright: "Unpublished Work (cleft) 2017-{currentYear} {author}"
+copyright: "All works (cleft) 2020-{currentYear} by {author}"
 
 description: >- # this means to ignore newlines until "baseurl:"
   Write an awesome description for your new site here. You can edit this
@@ -156,7 +156,7 @@ header_pages:
 # Page default value
 defaults:
   home:
-    heading: "Code Stuff"
+    heading: "Code-it"
     subheading: "Blog | Materials | Info"
     banner: "Your image url"
 
