@@ -1,0 +1,27 @@
+I"Ð<h2 id="nginx-configuration">Nginx configuration</h2>
+
+<p><em>Note: Default location /etc/nginx/nginx.cong.</em></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>load_module '/usr/lib64/nginx/modules/ngx_stream_module.so';
+
+worker_processes 4;
+worker_rlimit_nofile 40000;
+
+events {
+    worker_connections 8192;
+}
+
+stream {
+    upstream k3snodes {
+        least_conn;
+        server 192.168.100.51:6443 max_fails=3 fail_timeout=5s;
+        server 192.168.100.52:6443 max_fails=3 fail_timeout=5s;
+        server 192.168.100.53:6443 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen 6443;
+        proxy_pass k3snodes;
+    }
+}
+</code></pre></div></div>
+:ET

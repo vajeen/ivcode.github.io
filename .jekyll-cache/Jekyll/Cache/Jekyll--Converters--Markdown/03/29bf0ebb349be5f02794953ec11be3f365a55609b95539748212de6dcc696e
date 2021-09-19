@@ -1,0 +1,116 @@
+I"<h2 id="nginx-configuration">Nginx configuration</h2>
+
+<p><em>Note: Default location /etc/nginx/nginx.cong.</em></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>load_module '/usr/lib64/nginx/modules/ngx_stream_module.so';
+
+worker_processes 4;
+worker_rlimit_nofile 40000;
+
+events {
+    worker_connections 8192;
+}
+
+stream {
+    upstream k3snodes {
+        least_conn;
+        server 192.168.100.51:6443 max_fails=3 fail_timeout=5s;
+        server 192.168.100.52:6443 max_fails=3 fail_timeout=5s;
+        server 192.168.100.53:6443 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen 6443;
+        proxy_pass k3snodes;
+    }
+}
+</code></pre></div></div>
+
+<h2 id="install-k3sup">Install k3sup</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -sLS https://get.k3sup.dev | sh -
+install k3sup /usr/local/bin/
+</code></pre></div></div>
+
+<h2 id="install-kubectl">Install kubectl</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+</code></pre></div></div>
+
+<h2 id="install-first-master">Install First master</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k3sup install \
+	--host=node1 \
+	--user=root \
+	--cluster \
+	--tls-san 192.168.100.50 \
+ 	--k3s-extra-args="--node-taint node-role.kubernetes.io/master=true:NoSchedule"
+</code></pre></div></div>
+
+<p><em>Note: if you want a specific kubernetes version you can use –k3s-version=v1.19.4+k3s1</em></p>
+
+<h2 id="join-master-nodes">Join master nodes</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k3sup join \
+	--host=node2 \
+	--server-user=root \
+	--server-host=192.168.100.51 \
+	--user=root \
+	--server \
+	--k3s-extra-args="--node-taint node-role.kubernetes.io/master=true:NoSchedule"
+</code></pre></div></div>
+
+<h2 id="join-worker-nodes">Join worker nodes</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k3sup join \
+	--host=worker2 \
+	--server-user=root \
+	--server-host=192.168.100.51 \
+	--user=root
+</code></pre></div></div>
+
+<h2 id="testdeploymentyaml">testdeployment.yaml</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: mysite
+labels:
+    app: mysite
+spec:
+replicas: 1
+selector:
+    matchLabels:
+    app: mysite
+template:
+    metadata:
+    labels:
+        app: mysite
+    spec:
+    containers:
+        - name: mysite
+        image: kellygriffin/hello:v1
+        ports:
+            - containerPort: 80
+    tolerations:
+    - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+    - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+</code></pre></div></div>
+
+<h2 id="testdeplpyment-serviceyaml">testdeplpyment-service.yaml</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apiVersion: v1
+kind: Service
+metadata:
+name: mysite-service
+spec:
+type: NodePort
+selector:
+    app: mysite
+ports:
+    - protocol: TCP
+    port: 8080
+    targetPort: 80
+    nodePort: 30000
+</code></pre></div></div>
+:ET
